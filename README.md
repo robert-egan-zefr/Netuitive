@@ -30,7 +30,7 @@ The **config.js** file will need to be modified to ensure a valid API key for Ne
 {
     backends:["./backends/netuitive"],
     netuitive: {
-        apiKey: "<API-KEY>",
+        apiKey: "<API-KEY>",	<------ PUT YOUR API KEY HERE!
         apiHost: "api.app.netuitive.com",
         apiPort: 443,
         mappings: [
@@ -66,3 +66,11 @@ to begin generating metrics.
 
 **3.2** Golang example
 
+This example assumes you have Golang installed, and uses a thrid party Statsd client library [quipo/statsd]
+
+```sh
+$ go run ./tests/webserver.go &
+```
+
+This will run a webserver, listening on port 8800. Hit the URL http://localhost:8800/help for details on what 
+paths are valid. Each valid path will generate metrics when hit.

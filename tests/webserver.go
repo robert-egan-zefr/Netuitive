@@ -7,7 +7,7 @@
 //              - http://localhost:8000/help describes how to use the site
 //
 // Author: Rob Egan
-// Updated: January 7, 2016
+// Updated: January 21, 2016
 //
 package main
 
@@ -21,36 +21,40 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
-	"github.com/DataDog/datadog-go/statsd" // Data Dog import
+	"github.com/quipo/statsd" // Golang statsd client libraries
 )
 
 var (
 	mu      sync.Mutex
 	count   int
 	palette = []color.Color{color.White, color.Black}
-	dd      *statsd.Client
 	err     error
+	stats   *statsd
 )
 
 const (
 	whiteIndex    = 0
 	blackIndex    = 1
-	ddAgentServer = "192.168.99.100:8125" // IP/hostname and port of the DataDog Agent
-	webServerHost = "localhost:8000"      // IP/hostname and port of the web server
+	agentServer   = "192.168.99.100:8125" // IP/hostname and port of the DataDog Agent
+	webServerHost = "localhost:8800"      // IP/hostname and port of the web server
 )
 
 func main() {
-	// Connect to the statsd/datadogd server
-	dd, err = statsd.New(ddAgentServer)
+	// Initialize the StatsD client
+	prefix := "test.rob-egan."
+	statsdclient := statsd.NewStatsdClient(agentServer, prefix)
+	err := statsdclient.CreateSocket()
 	if err != nil {
-		log.Fatalf("Error connecting to Datadog Agent: %s", err.Error())
+		log.Println(err)
+		os.Exit(1)
 	}
-
-	// The default prefix for my test metrics
-	dd.Namespace = "test.rob-egan."
+	interval := time.Second * 2 // aggregate stats and flush every 2 seconds
+	stats := statsd.NewStatsdBuffer(interval, statsdclient)
+	defer stats.Close()
 
 	// Handler functions
 	http.HandleFunc("/", handler)
@@ -75,7 +79,7 @@ func help(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "      - \"/debug\" to display request header info...\n")
 	fmt.Fprintf(w, "      - \"/count\" to see the site's hit counter...\n")
 	fmt.Fprintf(w, "      - \"/lissajous\" to see Lissajous figures...\n")
-	dd.Count("help.pageview.count", 1, nil, 1) // Metric to record hits per cycle for this handler
+	stats.Incr("help.pageview.count", 1) // Metric to record hits per cycle for this handler
 }
 
 // handler to echo back the Path component of the requested URL. This is the default handler.
@@ -85,7 +89,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	count++
 	mu.Unlock()
 	fmt.Fprintf(w, "URL.Path = %q\n", r.URL.Path)
-	dd.Count("default.pageview.count", 1, nil, 1) // Metric to record hits per cycle for this handler
+	stats.Incr("default.pageview.count", 1) // Metric to record hits per cycle for this handler
 }
 
 // debug handler function prints elements of the HTTP request including:
@@ -107,7 +111,7 @@ func debug(w http.ResponseWriter, r *http.Request) {
 	for k, v := range r.Form {
 		fmt.Fprintf(w, "Form[%q] = %q\n", k, v)
 	}
-	dd.Count("debug.pageview.count", 1, nil, 1) // Metric to record hits per cycle for this handler
+	stats.Incr("debug.pageview.count", 1) // Metric to record hits per cycle for this handler
 }
 
 // counter handler echoes the number of non-count requests so far
@@ -116,7 +120,7 @@ func counter(w http.ResponseWriter, r *http.Request) {
 	mu.Lock()
 	fmt.Fprintf(w, "Count: %d\n", count)
 	mu.Unlock()
-	dd.Count("counter.pageview.count", 1, nil, 1) // Metric to record hits per cycle for this handler
+	stats.Incr("counter.pageview.count", 1) // Metric to record hits per cycle for this handler
 }
 
 // handler that displays lissajous figures in the browser
@@ -148,11 +152,11 @@ func lissajous(out io.Writer) {
 	}
 	gif.EncodeAll(out, &anim) // NOTE: ignoring encoding errors
 	l_secs := time.Since(l_start).Seconds()
-	dd.Histogram("lissajous.load.time", l_secs, nil, 1) // Metric to record time to load a figure
-	dd.Count("lissajous.pageview.count", 1, nil, 1)     // Metric to record hits per cycle for this handler
+	stats.Time("lissajous.load.time", l_secs) // Metric to record time to load a figure
+	stats.Incr("lissajous.pageview.count", 1) // Metric to record hits per cycle for this handler
 }
 
 // Increment the 'hits' counter anytime a request is received
 func hit() {
-	dd.Count("total.pageview.count", 1, nil, 1)
+	stats.Incr("total.pageview.count", 1)
 }
