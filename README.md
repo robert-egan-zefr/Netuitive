@@ -72,5 +72,5 @@ This example assumes you have Golang installed, and uses a thrid party Statsd cl
 $ go run ./tests/webserver.go &
 ```
 
-This will run a webserver, listening on port 8800. Hit the URL http://localhost:8800/help for details on what 
+This will run a webserver, listening on port 8000. Hit the URL http://localhost:8800/help for details on what 
 paths are valid. Each valid path will generate metrics when hit.
