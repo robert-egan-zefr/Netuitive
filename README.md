@@ -1,4 +1,4 @@
-# Netuitive
+# Netuitive StatsD Agent
 ==========================
 A Docker image and example code for testing tagged metrics with Netuitive's StatsD backend.
 

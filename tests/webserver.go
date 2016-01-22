@@ -33,14 +33,14 @@ var (
 	count   int
 	palette = []color.Color{color.White, color.Black}
 	err     error
-	stats   *statsd
+	stats   statsd.Statsd
 )
 
 const (
 	whiteIndex    = 0
 	blackIndex    = 1
 	agentServer   = "192.168.99.100:8125" // IP/hostname and port of the DataDog Agent
-	webServerHost = "localhost:8800"      // IP/hostname and port of the web server
+	webServerHost = "localhost:8000"      // IP/hostname and port of the web server
 )
 
 func main() {
@@ -152,8 +152,8 @@ func lissajous(out io.Writer) {
 	}
 	gif.EncodeAll(out, &anim) // NOTE: ignoring encoding errors
 	l_secs := time.Since(l_start).Seconds()
-	stats.Time("lissajous.load.time", l_secs) // Metric to record time to load a figure
-	stats.Incr("lissajous.pageview.count", 1) // Metric to record hits per cycle for this handler
+	stats.Timing("lissajous.load.time", int64(l_secs)) // Metric to record time to load a figure
+	stats.Incr("lissajous.pageview.count", 1)          // Metric to record hits per cycle for this handler
 }
 
 // Increment the 'hits' counter anytime a request is received
