@@ -8,7 +8,6 @@
 #
 
 import time, BaseHTTPServer, statsd
-#from datadog import initialize, statsd
 
 HOST_NAME = "localhost"		# Hostname or IP of Web Server
 PORT_NUMBER = 8000		# Web Server Port
