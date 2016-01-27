@@ -74,3 +74,16 @@ $ go run ./tests/webserver.go &
 
 This will run a webserver, listening on port 8000. Hit the URL http://localhost:8000/help for details on what 
 paths are valid. Each valid path will generate metrics when hit.
+
+**3.3** Golang/Datadog Example
+
+This example requires Golang plus the datadog-go statsd libraries. It was added to show a comparison between
+Datadog and Netuitive with regards to adding tags within the code being used to instrument metrics via StatsD.
+
+```sh
+$ go run ./tests/webserver_dd.go &
+```
+> This example also assumes that a datadog-statsd agent is running.
+
+This will create a web service on localhost, listening on TCP port 8000. The URL Path "/help" will explain
+details on what valid paths can be access, each of which produce various metrics.
